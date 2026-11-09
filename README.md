@@ -27,49 +27,40 @@ create accounts, publish listings, and leave reviews.
 
 ```text
 .
-├── app.js                 # Express server and API setup
-├── models/                # Mongoose models and validation schemas
-├── routes/                # User, listing, and review API routes
-├── utils/                 # Error and async middleware helpers
-├── initDB/                # Database seed and initialization scripts
-└── client/
-    ├── src/
-    │   ├── components/    # Reusable React components
-    │   ├── api.js         # Shared frontend API request helper
-    │   ├── App.jsx        # Router and application composition
-    │   └── main.jsx       # React entry point
-    └── package.json
+├── frontend/              # React/Vite application and frontend environment
+├── backend/               # Express API, models, routes, and backend environment
+└── api/                   # Vercel serverless adapter for the backend
 ```
 
-The React UI is organized under `client/src/components/` instead of keeping
-all components in one file. The folder currently contains components for the
-layout, authentication, listing cards, listing details, listing forms,
-protected routes, and shared form presentation.
+The React UI is organized under `frontend/src/components/`. The folder contains
+components for the layout, authentication, listing cards, listing details,
+listing forms, protected routes, and shared form presentation.
 
-`client/src/api.js` centralizes frontend requests. It applies the API base URL,
+`frontend/src/api.js` centralizes frontend requests. It applies the API base URL,
 sends session cookies, handles JSON responses, and turns failed API responses
 into errors for components to display.
 
 ## Prerequisites
 
-- Node.js 18 or newer
-- MongoDB running locally on `mongodb://127.0.0.1:27017/wanderLust`
+- Node.js 20.19+ or 22.12+ (required by Vite 8)
+- A MongoDB database (local for development, or a hosted database for Vercel)
+- `MONGODB_URI` and `SESSION_SECRET` environment variables
 
 ## Installation
 
-Install backend dependencies from the project root:
+Install both applications' dependencies from the project root:
 
 ```bash
-npm install
+npm run install:all
 ```
 
-Install frontend dependencies:
+Create `backend/.env` from `backend/.env.example` and set your MongoDB URL and
+a long, random `SESSION_SECRET`. Create `frontend/.env` from
+`frontend/.env.example` if you need to override the API URL; `/api` is the
+default and works with the local Vite proxy.
 
-```bash
-cd client
-npm install
-cd ..
-```
+Environment files belong inside their respective application directories and
+are ignored by Git.
 
 ## Running the application
 
@@ -81,39 +72,46 @@ npm start
 
 The API runs on `http://localhost:3000`.
 
-In a second terminal, start the Vite frontend:
+In a second terminal, start the Vite frontend from the project root:
 
 ```bash
-cd client
-npm run dev
+npm run dev:frontend
 ```
 
 The development frontend will be available at the URL printed by Vite,
 typically `http://localhost:5173`.
 
-The frontend uses `http://localhost:3000/api` by default. To point it at a
-different API server, create `client/.env` with:
-
-```bash
-VITE_API_URL=http://localhost:3000/api
-```
-
 ## Useful commands
-
-From `client/`:
-
-```bash
-npm run dev      # Start the Vite development server
-npm run build    # Create a production build
-npm run lint     # Run Oxlint
-npm run preview  # Preview the production build
-```
 
 From the project root:
 
 ```bash
-npm start        # Start the Express API
+npm start             # Start the Express API
+npm run dev:frontend  # Start the Vite development server
+npm run build         # Create the frontend production build
+npm run lint          # Run frontend Oxlint
 ```
+
+## Deploying to Vercel
+
+Import this repository into Vercel with the repository root as the project
+root. The checked-in `vercel.json` installs dependencies from `backend/` and
+`frontend/`, builds `frontend/`, and serves its `dist` output. The root `api/`
+adapter forwards API requests to the Express app in `backend/`.
+
+Before deploying, create a hosted MongoDB database and add these environment
+variables in the Vercel project settings for every deployment environment:
+
+- `MONGODB_URI` — the hosted database connection string
+- `SESSION_SECRET` — a long, unique random secret
+
+Optionally set `CLIENT_ORIGIN` if the API should accept credentialed browser
+requests from a separate frontend origin. The default Vercel deployment serves
+the frontend and API on the same origin and does not need this setting.
+
+The app uses MongoDB to persist both application data and login sessions.
+Ensure the database allows connections from Vercel and that its credentials
+are kept in Vercel environment variables, not committed to the repository.
 
 ## API route groups
 
